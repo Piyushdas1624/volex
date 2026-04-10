@@ -1,755 +1,1015 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-<link rel="icon" href="favicon.png" type="image/png">
-<title>BurpeeButtons (Volume by Exercise)</title>
-<style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  .hidden { display: none !important; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <link rel="icon" href="favicon.png" type="image/png">
+    <title>BurpeeButtons (Volume by Exercise)</title>
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-  body {
-    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-    background: #0a0a1a;
-    color: #fff;
-    overflow: hidden;
-    height: 100vh;
-    width: 100vw;
-  }
+        .hidden {
+            display: none !important;
+        }
 
-  #start-screen {
-    position: fixed; inset: 0; z-index: 1000;
-    background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3e 100%);
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    gap: 24px;
-  }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #0a0a1a;
+            color: #fff;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
 
-  #start-screen h1 {
-    font-size: clamp(28px, 6vw, 56px);
-    background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    text-align: center;
-  }
+        #start-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3e 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+        }
 
-  #start-screen p {
-    font-size: clamp(14px, 2.5vw, 18px);
-    color: #aaa; text-align: center; max-width: 500px; line-height: 1.6;
-    padding: 0 20px;
-  }
+        #start-screen h1 {
+            font-size: clamp(28px, 6vw, 56px);
+            background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+        }
 
-  #start-btn {
-    padding: 16px 48px; font-size: 20px; font-weight: 700;
-    border: none; border-radius: 50px; cursor: pointer;
-    background: linear-gradient(135deg, #ff6b6b, #ee5a24);
-    color: #fff; letter-spacing: 1px;
-    box-shadow: 0 8px 32px rgba(255, 107, 107, 0.4);
-    transition: transform 0.2s, box-shadow 0.2s;
-  }
-  #start-btn:hover { transform: scale(1.05); box-shadow: 0 12px 40px rgba(255, 107, 107, 0.6); }
-  #start-btn:active { transform: scale(0.97); }
+        #start-screen p {
+            font-size: clamp(14px, 2.5vw, 18px);
+            color: #aaa;
+            text-align: center;
+            max-width: 500px;
+            line-height: 1.6;
+            padding: 0 20px;
+        }
 
-  .main-layout {
-    display: grid;
-    grid-template-columns: 80px 1fr 200px;
-    grid-template-rows: 1fr;
-    height: 100vh; width: 100vw;
-  }
+        #start-btn {
+            padding: 16px 48px;
+            font-size: 20px;
+            font-weight: 700;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: #fff;
+            letter-spacing: 1px;
+            box-shadow: 0 8px 32px rgba(255, 107, 107, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
 
+        #start-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 12px 40px rgba(255, 107, 107, 0.6);
+        }
 
-  .volume-bar-container {
-    background: rgba(255,255,255,0.05);
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    padding: 16px 8px; position: relative;
-  }
+        #start-btn:active {
+            transform: scale(0.97);
+        }
 
-  .volume-track {
-    width: 32px; height: 70vh;
-    background: rgba(255,255,255,0.08);
-    border-radius: 16px; position: relative;
-    overflow: hidden;
-    box-shadow: inset 0 2px 8px rgba(0,0,0,0.3);
-  }
-
-  .volume-fill {
-    position: absolute; bottom: 0; left: 0; right: 0;
-    background: linear-gradient(0deg, #00d2ff 0%, #3a7bd5 50%, #ff6b6b 100%);
-    border-radius: 16px;
-    transition: height 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  }
-
-  .volume-label {
-    margin-top: 12px; font-size: 22px; font-weight: 800;
-    color: #48dbfb;
-  }
-
-  .camera-area {
-    position: relative;
-    display: flex; align-items: center; justify-content: center;
-    overflow: hidden;
-  }
-
-  #webcam {
-    width: 100%; height: 100%;
-    object-fit: cover;
-    transform: scaleX(-1);
-  }
-
-  #pose-canvas {
-    position: absolute; inset: 0;
-    width: 100%; height: 100%;
-    pointer-events: none;
-  }
+        .main-layout {
+            display: grid;
+            grid-template-columns: 80px 1fr 200px;
+            grid-template-rows: 1fr;
+            height: 100vh;
+            width: 100vw;
+        }
 
 
+        .volume-bar-container {
+            background: rgba(255, 255, 255, 0.05);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 16px 8px;
+            position: relative;
+        }
 
-  .stick-figure-panel {
-    background: rgba(255,255,255,0.03);
-    border-left: 1px solid rgba(255,255,255,0.06);
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    padding: 16px;
-  }
+        .volume-track {
+            width: 32px;
+            height: 70vh;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
 
-  .stick-figure-panel h3 {
-    font-size: 13px; color: #888;
-    margin-bottom: 12px; text-transform: uppercase;
-    letter-spacing: 2px;
-  }
+        .volume-fill {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(0deg, #00d2ff 0%, #3a7bd5 50%, #ff6b6b 100%);
+            border-radius: 16px;
+            transition: height 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
 
-  #instruction-canvas {
-    width: 160px; height: 220px;
-  }
+        .volume-label {
+            margin-top: 12px;
+            font-size: 22px;
+            font-weight: 800;
+            color: #48dbfb;
+        }
 
-  .rep-counter {
-    margin-top: 16px; text-align: center;
-  }
-  .rep-counter .number {
-    font-size: 36px; font-weight: 900;
-    background: linear-gradient(135deg, #feca57, #ff9ff3);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  }
-  .rep-counter .label {
-    font-size: 11px; color: #666;
-    text-transform: uppercase; letter-spacing: 2px;
-  }
+        .camera-area {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
 
-  .toast-container {
-    position: fixed;
-    top: 20px; left: 50%;
-    transform: translateX(-50%);
-    z-index: 900;
-    display: flex; flex-direction: column;
-    align-items: center; gap: 8px;
-    pointer-events: none;
-  }
+        #webcam {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
 
-  .toast {
-    padding: 10px 24px;
-    border-radius: 30px;
-    font-weight: 700; font-size: 16px;
-    animation: toastIn 0.3s ease, toastOut 0.3s ease 1.2s forwards;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-  }
-  .toast.up { background: rgba(0, 210, 106, 0.9); color: #fff; }
-  .toast.down { background: rgba(255, 75, 75, 0.9); color: #fff; }
+        #pose-canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
 
-  @keyframes toastIn {
-    from { opacity: 0; transform: translateY(-20px) scale(0.8); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
-  }
-  @keyframes toastOut {
-    from { opacity: 1; transform: translateY(0) scale(1); }
-    to { opacity: 0; transform: translateY(-20px) scale(0.8); }
-  }
 
-  #april-fools-overlay {
-    position: fixed; inset: 0; z-index: 2000;
-    background: radial-gradient(circle, #1a1a3e 0%, #0a0a1a 100%);
-    display: none; flex-direction: column;
-    align-items: center; justify-content: center;
-    gap: 20px; text-align: center;
-    animation: overlayIn 0.5s ease;
-  }
-  #april-fools-overlay.active { display: flex; }
 
-  @keyframes overlayIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
+        .stick-figure-panel {
+            background: rgba(255, 255, 255, 0.03);
+            border-left: 1px solid rgba(255, 255, 255, 0.06);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
 
-  #april-fools-overlay h1 {
-    font-size: clamp(36px, 8vw, 72px);
-    background: linear-gradient(90deg, #feca57, #ff6b6b, #ff9ff3, #48dbfb);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    animation: pulse 1.5s ease infinite;
-  }
+        .stick-figure-panel h3 {
+            font-size: 13px;
+            color: #888;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
 
-  @keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-  }
+        #instruction-canvas {
+            width: 160px;
+            height: 220px;
+        }
 
-  #april-fools-overlay .sub {
-    font-size: clamp(16px, 3vw, 24px);
-    color: #ccc; max-width: 600px;
-    line-height: 1.6; padding: 0 20px;
-  }
+        .rep-counter {
+            margin-top: 16px;
+            text-align: center;
+        }
 
-  #april-fools-overlay .reps-done {
-    font-size: clamp(40px, 6vw, 64px);
-    font-weight: 900; color: #feca57;
-  }
+        .rep-counter .number {
+            font-size: 36px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #feca57, #ff9ff3);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
 
-  #april-fools-overlay .dismiss-btn {
-    margin-top: 24px;
-    padding: 14px 40px; font-size: 16px;
-    border: 2px solid rgba(255,255,255,0.2);
-    border-radius: 50px; background: transparent;
-    color: #fff; cursor: pointer;
-    transition: all 0.2s;
-  }
-  #april-fools-overlay .dismiss-btn:hover {
-    background: rgba(255,255,255,0.1);
-    border-color: rgba(255,255,255,0.4);
-  }
+        .rep-counter .label {
+            font-size: 11px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
 
-  .status-indicator {
-    position: absolute; top: 12px; left: 12px;
-    display: flex; align-items: center; gap: 8px;
-    background: rgba(0,0,0,0.6); padding: 8px 14px;
-    border-radius: 20px; font-size: 13px; z-index: 10;
-  }
-  .status-dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: #ff4757;
-  }
-  .status-dot.active { background: #2ed573; animation: blink 1s infinite; }
-  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 900;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            pointer-events: none;
+        }
 
-  .loading-spinner {
-    width: 40px; height: 40px;
-    border: 3px solid rgba(255,255,255,0.1);
-    border-top-color: #48dbfb;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
+        .toast {
+            padding: 10px 24px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 16px;
+            animation: toastIn 0.3s ease, toastOut 0.3s ease 1.2s forwards;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
 
-  #loading-overlay {
-    position: fixed; inset: 0; z-index: 1500;
-    background: rgba(10,10,26,0.95);
-    display: none; flex-direction: column;
-    align-items: center; justify-content: center;
-    gap: 16px;
-  }
-  #loading-overlay.active { display: flex; }
-  #loading-overlay p { color: #888; font-size: 14px; }
+        .toast.up {
+            background: rgba(0, 210, 106, 0.9);
+            color: #fff;
+        }
 
-  .switch-camera-btn {
-    position: absolute; bottom: 16px; right: 16px;
-    background: rgba(0,0,0,0.6); color: white;
-    border: 2px solid rgba(255,255,255,0.2);
-    padding: 10px 16px; border-radius: 30px;
-    font-size: 14px; font-weight: bold; cursor: pointer;
-    z-index: 100; transition: background 0.2s;
-  }
-  .switch-camera-btn:active { background: rgba(0,0,0,0.8); }
-  @media (min-width: 769px) {
-    .switch-camera-btn { display: none; }
-  }
+        .toast.down {
+            background: rgba(255, 75, 75, 0.9);
+            color: #fff;
+        }
 
-  @media (max-width: 768px) {
-    /* === MOBILE: Full-screen camera with overlays === */
-    body { height: 100dvh; overflow: hidden; }
+        @keyframes toastIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.8);
+            }
 
-    .main-layout {
-      display: block;
-      width: 100vw;
-      height: 100dvh;
-      position: relative;
-      overflow: hidden;
-    }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
 
-    /* Volume sidebar — hidden, replaced by floating badge */
-    .volume-bar-container { display: none !important; }
+        @keyframes toastOut {
+            from {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
 
-    /* Camera fills the entire screen */
-    .camera-area {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 1;
-    }
-    #webcam {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      background: #000;
-    }
-    #pose-canvas {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-    }
+            to {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.8);
+            }
+        }
 
-    /* Mobile-only floating volume badge */
-    #mobile-volume-badge {
-      display: block !important;
-      position: fixed;
-      top: 12px; right: 12px;
-      z-index: 500;
-      font-size: 18px;
-      font-weight: 800;
-      background: rgba(0,0,0,0.65);
-      backdrop-filter: blur(10px);
-      padding: 6px 16px;
-      border-radius: 20px;
-      border: 1px solid rgba(255,255,255,0.15);
-      color: #48dbfb;
-    }
+        #april-fools-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 2000;
+            background: radial-gradient(circle, #1a1a3e 0%, #0a0a1a 100%);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            text-align: center;
+            animation: overlayIn 0.5s ease;
+        }
 
-    /* Status indicator — keep top-left */
-    .status-indicator { z-index: 100; }
+        #april-fools-overlay.active {
+            display: flex;
+        }
 
-    /* Guide panel — fixed bottom bar */
-    .stick-figure-panel {
-      display: flex !important;
-      position: fixed;
-      bottom: 0; left: 0; right: 0;
-      z-index: 100;
-      flex-direction: row !important;
-      align-items: center;
-      justify-content: center;
-      gap: 20px;
-      padding: 8px 16px !important;
-      padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px)) !important;
-      background: rgba(10, 10, 26, 0.85) !important;
-      backdrop-filter: blur(12px);
-      border-left: none !important;
-      border-top: 1px solid rgba(255,255,255,0.1);
-    }
-    .stick-figure-panel h3 { display: none; }
-    #instruction-canvas { width: 50px !important; height: 65px !important; flex-shrink: 0; }
-    .rep-counter { margin: 0 !important; text-align: center; }
-    .rep-counter .number { font-size: 24px !important; }
-    .rep-counter .label { font-size: 9px !important; letter-spacing: 1px; }
+        @keyframes overlayIn {
+            from {
+                opacity: 0;
+            }
 
-    /* Flip camera — fixed above the bottom bar on mobile */
-    .switch-camera-btn {
-      position: fixed !important;
-      bottom: calc(70px + env(safe-area-inset-bottom, 0px));
-      left: 12px;
-      right: auto;
-      z-index: 200;
-      padding: 8px 14px;
-      font-size: 12px;
-    }
-  }
-</style>
+            to {
+                opacity: 1;
+            }
+        }
+
+        #april-fools-overlay h1 {
+            font-size: clamp(36px, 8vw, 72px);
+            background: linear-gradient(90deg, #feca57, #ff6b6b, #ff9ff3, #48dbfb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: pulse 1.5s ease infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        #april-fools-overlay .sub {
+            font-size: clamp(16px, 3vw, 24px);
+            color: #ccc;
+            max-width: 600px;
+            line-height: 1.6;
+            padding: 0 20px;
+        }
+
+        #april-fools-overlay .reps-done {
+            font-size: clamp(40px, 6vw, 64px);
+            font-weight: 900;
+            color: #feca57;
+        }
+
+        #april-fools-overlay .dismiss-btn {
+            margin-top: 24px;
+            padding: 14px 40px;
+            font-size: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50px;
+            background: transparent;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        #april-fools-overlay .dismiss-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .status-indicator {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            z-index: 10;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ff4757;
+        }
+
+        .music-toggle-btn {
+            position: absolute;
+            top: 12px;
+            left: 140px;
+            z-index: 100;
+            background: rgba(0,0,0,0.6);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            backdrop-filter: blur(8px);
+            transition: all 0.2s;
+        }
+        .music-toggle-btn.muted { opacity: 0.6; }
+        .music-toggle-btn:active { transform: scale(0.95); }
+
+        @media (max-width: 768px) {
+            .music-toggle-btn {
+                left: 110px;
+                padding: 6px 10px;
+                font-size: 11px;
+            }
+        }
+
+        .status-dot.active {
+            background: #2ed573;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #48dbfb;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        #loading-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1500;
+            background: rgba(10, 10, 26, 0.95);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+        }
+
+        #loading-overlay.active {
+            display: flex;
+        }
+
+        #loading-overlay p {
+            color: #888;
+            font-size: 14px;
+        }
+
+        .switch-camera-btn {
+            position: absolute;
+            bottom: 16px;
+            right: 16px;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            padding: 10px 16px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 100;
+            transition: background 0.2s;
+        }
+
+        .switch-camera-btn:active {
+            background: rgba(0, 0, 0, 0.8);
+        }
+
+        @media (min-width: 769px) {
+            .switch-camera-btn {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+
+            /* === MOBILE: Full-screen camera with overlays === */
+            body {
+                height: 100dvh;
+                overflow: hidden;
+            }
+
+            .main-layout {
+                display: block;
+                width: 100vw;
+                height: 100dvh;
+                position: relative;
+                overflow: hidden;
+            }
+
+            /* Volume sidebar — hidden, replaced by floating badge */
+            .volume-bar-container {
+                display: none !important;
+            }
+
+            /* Camera fills the entire screen */
+            .camera-area {
+                position: absolute;
+                inset: 0;
+                width: 100%;
+                height: 100%;
+                z-index: 1;
+            }
+
+            #webcam {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                background: #000;
+            }
+
+            #pose-canvas {
+                position: absolute;
+                inset: 0;
+                width: 100%;
+                height: 100%;
+            }
+
+            /* Mobile-only floating volume badge */
+            #mobile-volume-badge {
+                display: block !important;
+                position: fixed;
+                top: 12px;
+                right: 12px;
+                z-index: 500;
+                font-size: 18px;
+                font-weight: 800;
+                background: rgba(0, 0, 0, 0.65);
+                backdrop-filter: blur(10px);
+                padding: 6px 16px;
+                border-radius: 20px;
+                border: 1px solid rgba(255, 255, 255, 0.15);
+                color: #48dbfb;
+            }
+
+            /* Status indicator — keep top-left */
+            .status-indicator {
+                z-index: 100;
+            }
+
+            /* Guide panel — fixed bottom bar */
+            .stick-figure-panel {
+                display: flex !important;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                z-index: 100;
+                flex-direction: row !important;
+                align-items: center;
+                justify-content: center;
+                gap: 20px;
+                padding: 8px 16px !important;
+                padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px)) !important;
+                background: rgba(10, 10, 26, 0.85) !important;
+                backdrop-filter: blur(12px);
+                border-left: none !important;
+                border-top: 1px solid rgba(255, 255, 255, 0.1);
+            }
+
+            .stick-figure-panel h3 {
+                display: none;
+            }
+
+            #instruction-canvas {
+                width: 50px !important;
+                height: 65px !important;
+                flex-shrink: 0;
+            }
+
+            .rep-counter {
+                margin: 0 !important;
+                text-align: center;
+            }
+
+            .rep-counter .number {
+                font-size: 24px !important;
+            }
+
+            .rep-counter .label {
+                font-size: 9px !important;
+                letter-spacing: 1px;
+            }
+
+            /* Flip camera — fixed above the bottom bar on mobile */
+            .switch-camera-btn {
+                position: fixed !important;
+                bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+                left: 12px;
+                right: auto;
+                z-index: 200;
+                padding: 8px 14px;
+                font-size: 12px;
+            }
+        }
+    </style>
 </head>
+
 <body>
 
-<div id="start-screen">
-  <h1>Volume by Exercise</h1>
-  <p>Control the volume with your body! Do jumping jacks to turn it up. Lower your arms to turn it down. Ready to sweat?</p>
-  <button id="start-btn">LET'S GO</button>
-</div>
-
-<div id="loading-overlay">
-  <div class="loading-spinner"></div>
-  <p>Loading Pose Detection...</p>
-</div>
-
-<div class="main-layout hidden" id="main-app">
-  <div class="volume-bar-container">
-    <div class="volume-track">
-      <div class="volume-fill" id="volume-fill" style="height:50%"></div>
+    <div id="start-screen">
+        <h1>Volume by Exercise</h1>
+        <p>Control the volume with your body! Do jumping jacks to turn it up. Lower your arms to turn it down. Ready to
+            sweat?</p>
+        <button id="start-btn">LET'S GO</button>
     </div>
-    <div class="volume-label" id="volume-label">50%</div>
-  </div>
 
-  <div class="camera-area">
-    <video id="webcam" autoplay playsinline></video>
-    <canvas id="pose-canvas"></canvas>
-    <div class="status-indicator">
-      <div class="status-dot" id="status-dot"></div>
-      <span id="status-text">Waiting...</span>
+    <div id="loading-overlay">
+        <div class="loading-spinner"></div>
+        <p>Loading Pose Detection...</p>
     </div>
-    <button class="switch-camera-btn" id="switch-camera-btn">Flip Camera</button>
-  </div>
 
-  <div id="mobile-volume-badge" style="display:none;">50%</div>
+    <div class="main-layout hidden" id="main-app">
+        <div class="volume-bar-container">
+            <div class="volume-track">
+                <div class="volume-fill" id="volume-fill" style="height:50%"></div>
+            </div>
+            <div class="volume-label" id="volume-label">50%</div>
+        </div>
 
-  <div class="stick-figure-panel">
-    <h3>Guide</h3>
-    <canvas id="instruction-canvas" width="160" height="220"></canvas>
-    <div class="rep-counter">
-      <div class="number" id="rep-count">0</div>
-      <div class="label">Reps</div>
+        <div class="camera-area">
+            <video id="webcam" autoplay playsinline></video>
+            <canvas id="pose-canvas"></canvas>
+            <div class="status-indicator">
+                <div class="status-dot" id="status-dot"></div>
+                <span id="status-text">Waiting...</span>
+            </div>
+            <button class="music-toggle-btn" id="music-toggle">
+                <span id="music-icon">🎵</span> Music: ON
+            </button>
+            <button class="switch-camera-btn" id="switch-camera-btn">Flip Camera</button>
+        </div>
+
+        <audio id="bg-music" loop src="ncs.mp3"></audio>
+
+        <div id="mobile-volume-badge" style="display:none;">50%</div>
+
+        <div class="stick-figure-panel">
+            <h3>Guide</h3>
+            <canvas id="instruction-canvas" width="160" height="220"></canvas>
+            <div class="rep-counter">
+                <div class="number" id="rep-count">0</div>
+                <div class="label">Reps</div>
+            </div>
+        </div>
     </div>
-  </div>
-</div>
 
-<div class="toast-container" id="toast-container"></div>
+    <div class="toast-container" id="toast-container"></div>
 
-<div id="april-fools-overlay">
-  <h1>APRIL FOOLS!</h1>
-  <div class="reps-done" id="reps-done">0</div>
-  <div class="sub">
-    I just made you do <strong id="reps-done-text">0</strong> jumping jacks just to change the volume.<br>
-    You're welcome for the cardio. Now be grateful and go get some water.
-  </div>
-  <button class="dismiss-btn" id="dismiss-btn">Fine, I'll hydrate.</button>
-</div>
+    <div id="april-fools-overlay">
+        <h1>APRIL FOOLS!</h1>
+        <div class="reps-done" id="reps-done">0</div>
+        <div class="sub">
+            I just made you do <strong id="reps-done-text">0</strong> jumping jacks just to change the volume.<br>
+            You're welcome for the cardio. Now be grateful and go get some water.
+        </div>
+        <button class="dismiss-btn" id="dismiss-btn">Fine, I'll hydrate.</button>
+    </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
 
-<script>
-(function() {
-  let volume = 0.5;
-  let repCount = 0;
-  let currentArmState = 'NEUTRAL'; // State machine: NEUTRAL | UP | DOWN
-  let aprilFoolsTriggered = false;
-  let poseReady = false;
+    <script>
+        (function () {
+            let volume = 0.5;
+            let repCount = 0;
+            let currentArmState = 'NEUTRAL'; // State machine: NEUTRAL | UP | DOWN
+            let aprilFoolsTriggered = false;
+            let poseReady = false;
 
-  const startScreen = document.getElementById('start-screen');
-  const startBtn = document.getElementById('start-btn');
-  const loadingOverlay = document.getElementById('loading-overlay');
-  const mainApp = document.getElementById('main-app');
-  const webcam = document.getElementById('webcam');
-  const poseCanvas = document.getElementById('pose-canvas');
-  const poseCtx = poseCanvas.getContext('2d');
-  const volumeFill = document.getElementById('volume-fill');
-  const volumeLabel = document.getElementById('volume-label');
-  const statusDot = document.getElementById('status-dot');
-  const statusText = document.getElementById('status-text');
-  const repCountEl = document.getElementById('rep-count');
-  const toastContainer = document.getElementById('toast-container');
-  const aprilFoolsOverlay = document.getElementById('april-fools-overlay');
-  const repsDoneEl = document.getElementById('reps-done');
-  const repsDoneTextEl = document.getElementById('reps-done-text');
-  const dismissBtn = document.getElementById('dismiss-btn');
-  const switchCameraBtn = document.getElementById('switch-camera-btn');
-  const mobileVolumeBadge = document.getElementById('mobile-volume-badge');
-  const instrCanvas = document.getElementById('instruction-canvas');
-  const instrCtx = instrCanvas.getContext('2d');
+            const startScreen = document.getElementById('start-screen');
+            const startBtn = document.getElementById('start-btn');
+            const loadingOverlay = document.getElementById('loading-overlay');
+            const mainApp = document.getElementById('main-app');
+            const webcam = document.getElementById('webcam');
+            const poseCanvas = document.getElementById('pose-canvas');
+            const poseCtx = poseCanvas.getContext('2d');
+            const volumeFill = document.getElementById('volume-fill');
+            const volumeLabel = document.getElementById('volume-label');
+            const statusDot = document.getElementById('status-dot');
+            const statusText = document.getElementById('status-text');
+            const repCountEl = document.getElementById('rep-count');
+            const toastContainer = document.getElementById('toast-container');
+            const aprilFoolsOverlay = document.getElementById('april-fools-overlay');
+            const repsDoneEl = document.getElementById('reps-done');
+            const repsDoneTextEl = document.getElementById('reps-done-text');
+            const dismissBtn = document.getElementById('dismiss-btn');
+            const switchCameraBtn = document.getElementById('switch-camera-btn');
+            const mobileVolumeBadge = document.getElementById('mobile-volume-badge');
+            const musicBtn = document.getElementById('music-toggle');
+            const musicIcon = document.getElementById('music-icon');
+            const bgMusic = document.getElementById('bg-music');
+            const instrCanvas = document.getElementById('instruction-canvas');
+            const instrCtx = instrCanvas.getContext('2d');
 
-  // armState: 'UP' | 'NEUTRAL' | 'DOWN'
-  function drawStickFigure(ctx, w, h, armState) {
-    ctx.clearRect(0, 0, w, h);
-    const cx = w / 2;
-    const headR = 14;
-    const headY = 30;
-    const neckY = headY + headR + 4;
-    const shoulderY = neckY + 12;
-    const hipY = shoulderY + 50;
-    const kneeY = hipY + 35;
-    const footY = kneeY + 35;
+            // armState: 'UP' | 'NEUTRAL' | 'DOWN'
+            function drawStickFigure(ctx, w, h, armState) {
+                ctx.clearRect(0, 0, w, h);
+                const cx = w / 2;
+                const headR = 14;
+                const headY = 30;
+                const neckY = headY + headR + 4;
+                const shoulderY = neckY + 12;
+                const hipY = shoulderY + 50;
+                const kneeY = hipY + 35;
+                const footY = kneeY + 35;
 
-    ctx.strokeStyle = '#48dbfb';
-    ctx.lineWidth = 2.5;
-    ctx.lineCap = 'round';
+                ctx.strokeStyle = '#48dbfb';
+                ctx.lineWidth = 2.5;
+                ctx.lineCap = 'round';
 
-    // Head
-    ctx.beginPath();
-    ctx.arc(cx, headY, headR, 0, Math.PI * 2);
-    ctx.stroke();
+                // Head
+                ctx.beginPath();
+                ctx.arc(cx, headY, headR, 0, Math.PI * 2);
+                ctx.stroke();
 
-    // Spine
-    ctx.beginPath();
-    ctx.moveTo(cx, neckY);
-    ctx.lineTo(cx, hipY);
-    ctx.stroke();
+                // Spine
+                ctx.beginPath();
+                ctx.moveTo(cx, neckY);
+                ctx.lineTo(cx, hipY);
+                ctx.stroke();
 
-    // Shoulders
-    ctx.beginPath();
-    ctx.moveTo(cx - 20, shoulderY);
-    ctx.lineTo(cx + 20, shoulderY);
-    ctx.stroke();
+                // Shoulders
+                ctx.beginPath();
+                ctx.moveTo(cx - 20, shoulderY);
+                ctx.lineTo(cx + 20, shoulderY);
+                ctx.stroke();
 
-    // Arms based on state
-    if (armState === 'UP') {
-      ctx.beginPath();
-      ctx.moveTo(cx - 20, shoulderY);
-      ctx.lineTo(cx - 35, shoulderY - 40);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(cx + 20, shoulderY);
-      ctx.lineTo(cx + 35, shoulderY - 40);
-      ctx.stroke();
-    } else if (armState === 'DOWN') {
-      ctx.beginPath();
-      ctx.moveTo(cx - 20, shoulderY);
-      ctx.lineTo(cx - 32, shoulderY + 30);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(cx + 20, shoulderY);
-      ctx.lineTo(cx + 32, shoulderY + 30);
-      ctx.stroke();
-    } else {
-      // NEUTRAL — arms straight out (perpendicular / T-pose)
-      ctx.beginPath();
-      ctx.moveTo(cx - 20, shoulderY);
-      ctx.lineTo(cx - 50, shoulderY);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(cx + 20, shoulderY);
-      ctx.lineTo(cx + 50, shoulderY);
-      ctx.stroke();
-    }
+                // Arms based on state
+                if (armState === 'UP') {
+                    ctx.beginPath();
+                    ctx.moveTo(cx - 20, shoulderY);
+                    ctx.lineTo(cx - 35, shoulderY - 40);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(cx + 20, shoulderY);
+                    ctx.lineTo(cx + 35, shoulderY - 40);
+                    ctx.stroke();
+                } else if (armState === 'DOWN') {
+                    ctx.beginPath();
+                    ctx.moveTo(cx - 20, shoulderY);
+                    ctx.lineTo(cx - 32, shoulderY + 30);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(cx + 20, shoulderY);
+                    ctx.lineTo(cx + 32, shoulderY + 30);
+                    ctx.stroke();
+                } else {
+                    // NEUTRAL — arms straight out (perpendicular / T-pose)
+                    ctx.beginPath();
+                    ctx.moveTo(cx - 20, shoulderY);
+                    ctx.lineTo(cx - 50, shoulderY);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(cx + 20, shoulderY);
+                    ctx.lineTo(cx + 50, shoulderY);
+                    ctx.stroke();
+                }
 
-    // Legs
-    ctx.beginPath();
-    ctx.moveTo(cx - 8, hipY);
-    ctx.lineTo(cx - 16, kneeY);
-    ctx.lineTo(cx - 16, footY);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(cx + 8, hipY);
-    ctx.lineTo(cx + 16, kneeY);
-    ctx.lineTo(cx + 16, footY);
-    ctx.stroke();
+                // Legs
+                ctx.beginPath();
+                ctx.moveTo(cx - 8, hipY);
+                ctx.lineTo(cx - 16, kneeY);
+                ctx.lineTo(cx - 16, footY);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(cx + 8, hipY);
+                ctx.lineTo(cx + 16, kneeY);
+                ctx.lineTo(cx + 16, footY);
+                ctx.stroke();
 
-    // Label
-    const labelColors = { UP: '#2ed573', NEUTRAL: '#feca57', DOWN: '#ff6b6b' };
-    const labelTexts = { UP: 'VOLUME UP', NEUTRAL: 'SAFE SPOT', DOWN: 'VOLUME DOWN' };
-    ctx.fillStyle = labelColors[armState] || '#feca57';
-    ctx.font = '11px system-ui';
-    ctx.textAlign = 'center';
-    ctx.fillText(labelTexts[armState] || 'SAFE SPOT', cx, h - 4);
-  }
+                // Label
+                const labelColors = { UP: '#2ed573', NEUTRAL: '#feca57', DOWN: '#ff6b6b' };
+                const labelTexts = { UP: 'VOLUME UP', NEUTRAL: 'SAFE SPOT', DOWN: 'VOLUME DOWN' };
+                ctx.fillStyle = labelColors[armState] || '#feca57';
+                ctx.font = '11px system-ui';
+                ctx.textAlign = 'center';
+                ctx.fillText(labelTexts[armState] || 'SAFE SPOT', cx, h - 4);
+            }
 
-  let instrAnimFrame = 0;
-  function animateInstruction() {
-    instrAnimFrame++;
-    // Cycle through UP -> NEUTRAL -> DOWN -> NEUTRAL
-    const phase = Math.sin(instrAnimFrame * 0.025);
-    let demoState = 'NEUTRAL';
-    if (phase > 0.4) demoState = 'UP';
-    else if (phase < -0.4) demoState = 'DOWN';
-    drawStickFigure(instrCtx, 160, 220, demoState);
-    requestAnimationFrame(animateInstruction);
-  }
-  animateInstruction();
+            let instrAnimFrame = 0;
+            function animateInstruction() {
+                instrAnimFrame++;
+                // Cycle through UP -> NEUTRAL -> DOWN -> NEUTRAL
+                const phase = Math.sin(instrAnimFrame * 0.025);
+                let demoState = 'NEUTRAL';
+                if (phase > 0.4) demoState = 'UP';
+                else if (phase < -0.4) demoState = 'DOWN';
+                drawStickFigure(instrCtx, 160, 220, demoState);
+                requestAnimationFrame(animateInstruction);
+            }
+            animateInstruction();
 
-  function showToast(text, type) {
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    toast.textContent = text;
-    toastContainer.appendChild(toast);
-    setTimeout(() => toast.remove(), 1500);
-  }
+            function showToast(text, type) {
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
+                toast.textContent = text;
+                toastContainer.appendChild(toast);
+                setTimeout(() => toast.remove(), 1500);
+            }
 
-  function updateVolumeUI() {
-    const pct = Math.round(volume * 100);
-    volumeFill.style.height = pct + '%';
-    volumeLabel.textContent = pct + '%';
-    if (mobileVolumeBadge) mobileVolumeBadge.textContent = pct + '%';
+            function updateVolumeUI() {
+                const pct = Math.round(volume * 100);
+                volumeFill.style.height = pct + '%';
+                volumeLabel.textContent = pct + '%';
+                if (mobileVolumeBadge) mobileVolumeBadge.textContent = pct + '%';
+                
+                // Sync background music volume with workout progress (max 90%)
+                if (bgMusic) bgMusic.volume = volume * 0.9;
 
-    if (volume >= 0.8) {
-      volumeFill.style.background = 'linear-gradient(0deg, #ff6b6b, #ff4757)';
-    } else if (volume >= 0.5) {
-      volumeFill.style.background = 'linear-gradient(0deg, #feca57, #ff9ff3)';
-    } else {
-      volumeFill.style.background = 'linear-gradient(0deg, #48dbfb, #3a7bd5)';
-    }
+                if (volume >= 0.8) {
+                    volumeFill.style.background = 'linear-gradient(0deg, #ff6b6b, #ff4757)';
+                } else if (volume >= 0.5) {
+                    volumeFill.style.background = 'linear-gradient(0deg, #feca57, #ff9ff3)';
+                } else {
+                    volumeFill.style.background = 'linear-gradient(0deg, #48dbfb, #3a7bd5)';
+                }
 
-  }
+            }
 
-  function adjustVolume(direction) {
-    if (aprilFoolsTriggered) return;
+            function adjustVolume(direction) {
+                if (aprilFoolsTriggered) return;
 
-    if (direction === 'UP' && volume < 1.0) {
-      volume = Math.min(1, volume + 0.05);
-      showToast('+5%', 'up');
-    } else if (direction === 'DOWN' && volume > 0.0) {
-      volume = Math.max(0, volume - 0.05);
-      showToast('-5%', 'down');
-    }
+                if (direction === 'UP' && volume < 1.0) {
+                    volume = Math.min(1, volume + 0.05);
+                    showToast('+5%', 'up');
+                } else if (direction === 'DOWN' && volume > 0.0) {
+                    volume = Math.max(0, volume - 0.05);
+                    showToast('-5%', 'down');
+                }
 
-    updateVolumeUI();
-    checkAprilFools();
-  }
+                updateVolumeUI();
+                checkAprilFools();
+            }
 
-  function checkAprilFools() {
-    if (aprilFoolsTriggered) return;
+            function checkAprilFools() {
+                if (aprilFoolsTriggered) return;
 
-    if (volume <= 0 || volume >= 1) {
-      aprilFoolsTriggered = true;
-      repsDoneEl.textContent = repCount;
-      repsDoneTextEl.textContent = repCount;
-      aprilFoolsOverlay.classList.add('active');
-    }
-  }
+                if (volume <= 0 || volume >= 1) {
+                    aprilFoolsTriggered = true;
+                    repsDoneEl.textContent = repCount;
+                    repsDoneTextEl.textContent = repCount;
+                    aprilFoolsOverlay.classList.add('active');
+                }
+            }
 
-  dismissBtn.addEventListener('click', () => {
-    aprilFoolsOverlay.classList.remove('active');
-    volume = 0.5;
-    updateVolumeUI();
-    aprilFoolsTriggered = false;
-  });
+            dismissBtn.addEventListener('click', () => {
+                aprilFoolsOverlay.classList.remove('active');
+                volume = 0.5;
+                updateVolumeUI();
+                aprilFoolsTriggered = false;
+            });
 
 
 
-  function onPoseResults(results) {
-    poseCanvas.width = poseCanvas.offsetWidth;
-    poseCanvas.height = poseCanvas.offsetHeight;
-    poseCtx.save();
-    poseCtx.clearRect(0, 0, poseCanvas.width, poseCanvas.height);
+            function onPoseResults(results) {
+                poseCanvas.width = poseCanvas.offsetWidth;
+                poseCanvas.height = poseCanvas.offsetHeight;
+                poseCtx.save();
+                poseCtx.clearRect(0, 0, poseCanvas.width, poseCanvas.height);
 
-    if (results.poseLandmarks) {
-      statusDot.classList.add('active');
-      statusText.textContent = 'Tracking';
+                if (results.poseLandmarks) {
+                    statusDot.classList.add('active');
+                    statusText.textContent = 'Tracking';
 
-      drawConnectors(poseCtx, results.poseLandmarks, POSE_CONNECTIONS, {
-        color: 'rgba(72, 219, 251, 0.5)', lineWidth: 3
-      });
-      drawLandmarks(poseCtx, results.poseLandmarks, {
-        color: 'rgba(255, 159, 243, 0.7)', lineWidth: 1, radius: 4
-      });
+                    drawConnectors(poseCtx, results.poseLandmarks, POSE_CONNECTIONS, {
+                        color: 'rgba(72, 219, 251, 0.5)', lineWidth: 3
+                    });
+                    drawLandmarks(poseCtx, results.poseLandmarks, {
+                        color: 'rgba(255, 159, 243, 0.7)', lineWidth: 1, radius: 4
+                    });
 
-      const landmarks = results.poseLandmarks;
-      const leftWristY = landmarks[15].y;
-      const rightWristY = landmarks[16].y;
-      const leftShoulderY = landmarks[11].y;
-      const rightShoulderY = landmarks[12].y;
+                    const landmarks = results.poseLandmarks;
+                    const leftWristY = landmarks[15].y;
+                    const rightWristY = landmarks[16].y;
+                    const leftShoulderY = landmarks[11].y;
+                    const rightShoulderY = landmarks[12].y;
 
-      // Average wrist and shoulder heights
-      const avgWristY = (leftWristY + rightWristY) / 2;
-      const avgShoulderY = (leftShoulderY + rightShoulderY) / 2;
+                    // Average wrist and shoulder heights
+                    const avgWristY = (leftWristY + rightWristY) / 2;
+                    const avgShoulderY = (leftShoulderY + rightShoulderY) / 2;
 
-      // Safe spot buffer — wrists within this range of shoulders = NEUTRAL
-      // In MediaPipe, Y increases downward, so:
-      //   wrists ABOVE shoulders => avgWristY < avgShoulderY
-      //   wrists BELOW shoulders => avgWristY > avgShoulderY
-      const threshold = 0.10;
+                    // Safe spot buffer — wrists within this range of shoulders = NEUTRAL
+                    // In MediaPipe, Y increases downward, so:
+                    //   wrists ABOVE shoulders => avgWristY < avgShoulderY
+                    //   wrists BELOW shoulders => avgWristY > avgShoulderY
+                    const threshold = 0.10;
 
-      let detectedZone;
-      if (avgWristY < avgShoulderY - threshold) {
-        detectedZone = 'UP';   // Wrists significantly above shoulders
-      } else if (avgWristY > avgShoulderY + threshold) {
-        detectedZone = 'DOWN'; // Wrists significantly below shoulders
-      } else {
-        detectedZone = 'NEUTRAL'; // Safe spot — arms roughly perpendicular
-      }
+                    let detectedZone;
+                    if (avgWristY < avgShoulderY - threshold) {
+                        detectedZone = 'UP';   // Wrists significantly above shoulders
+                    } else if (avgWristY > avgShoulderY + threshold) {
+                        detectedZone = 'DOWN'; // Wrists significantly below shoulders
+                    } else {
+                        detectedZone = 'NEUTRAL'; // Safe spot — arms roughly perpendicular
+                    }
 
-      // STATE MACHINE: Only trigger volume change when transitioning FROM neutral
-      if (detectedZone === 'UP' && currentArmState === 'NEUTRAL') {
-        repCount++;
-        repCountEl.textContent = repCount;
-        adjustVolume('UP');
-      } else if (detectedZone === 'DOWN' && currentArmState === 'NEUTRAL') {
-        adjustVolume('DOWN');
-      }
-      // Update state (going UP→DOWN directly won't trigger anything)
-      currentArmState = detectedZone;
+                    // STATE MACHINE: Only trigger volume change when transitioning FROM neutral
+                    if (detectedZone === 'UP' && currentArmState === 'NEUTRAL') {
+                        repCount++;
+                        repCountEl.textContent = repCount;
+                        adjustVolume('UP');
+                    } else if (detectedZone === 'DOWN' && currentArmState === 'NEUTRAL') {
+                        adjustVolume('DOWN');
+                    }
+                    // Update state (going UP→DOWN directly won't trigger anything)
+                    currentArmState = detectedZone;
 
-      drawStickFigure(instrCtx, 160, 220, currentArmState);
-    } else {
-      statusDot.classList.remove('active');
-      statusText.textContent = 'No pose detected';
-    }
+                    drawStickFigure(instrCtx, 160, 220, currentArmState);
+                } else {
+                    statusDot.classList.remove('active');
+                    statusText.textContent = 'No pose detected';
+                }
 
-    poseCtx.restore();
-  }
+                poseCtx.restore();
+            }
 
-  let currentFacingMode = 'user';
-  let mpCamera = null;
-  let poseInstance = null;
-  let isSwitching = false;
+            let currentFacingMode = 'user';
+            let mpCamera = null;
+            let poseInstance = null;
+            let isSwitching = false;
 
-  async function stopCurrentCamera() {
-    // Stop MediaPipe Camera first
-    if (mpCamera) {
-      try { await mpCamera.stop(); } catch(e) { /* ignore */ }
-      mpCamera = null;
-    }
-    // Then release all browser media tracks
-    if (webcam.srcObject) {
-      webcam.srcObject.getTracks().forEach(track => track.stop());
-      webcam.srcObject = null;
-    }
-    // Give the hardware time to fully release
-    await new Promise(r => setTimeout(r, 400));
-  }
+            async function stopCurrentCamera() {
+                // Stop MediaPipe Camera first
+                if (mpCamera) {
+                    try { await mpCamera.stop(); } catch (e) { /* ignore */ }
+                    mpCamera = null;
+                }
+                // Then release all browser media tracks
+                if (webcam.srcObject) {
+                    webcam.srcObject.getTracks().forEach(track => track.stop());
+                    webcam.srcObject = null;
+                }
+                // Give the hardware time to fully release
+                await new Promise(r => setTimeout(r, 400));
+            }
 
-  async function startCamera(retryCount = 0) {
-    loadingOverlay.classList.add('active');
+            async function startCamera(retryCount = 0) {
+                loadingOverlay.classList.add('active');
 
-    await stopCurrentCamera();
+                await stopCurrentCamera();
 
-    if (!poseInstance) {
-      poseInstance = new Pose({
-        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
-      });
+                if (!poseInstance) {
+                    poseInstance = new Pose({
+                        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
+                    });
 
-      poseInstance.setOptions({
-        modelComplexity: 1,
-        smoothLandmarks: true,
-        enableSegmentation: false,
-        minDetectionConfidence: 0.5,
-        minTrackingConfidence: 0.5
-      });
-      poseInstance.onResults(onPoseResults);
-    }
+                    poseInstance.setOptions({
+                        modelComplexity: 1,
+                        smoothLandmarks: true,
+                        enableSegmentation: false,
+                        minDetectionConfidence: 0.5,
+                        minTrackingConfidence: 0.5
+                    });
+                    poseInstance.onResults(onPoseResults);
+                }
 
-    try {
-      webcam.style.transform = currentFacingMode === 'user' ? 'scaleX(-1)' : 'scaleX(1)';
+                try {
+                    webcam.style.transform = currentFacingMode === 'user' ? 'scaleX(-1)' : 'scaleX(1)';
 
-      // Let MediaPipe's Camera helper handle getUserMedia
-      mpCamera = new Camera(webcam, {
-        onFrame: async () => {
-          await poseInstance.send({ image: webcam });
-        },
-        facingMode: currentFacingMode,
-        width: 640,
-        height: 480
-      });
+                    // Let MediaPipe's Camera helper handle getUserMedia
+                    mpCamera = new Camera(webcam, {
+                        onFrame: async () => {
+                            await poseInstance.send({ image: webcam });
+                        },
+                        facingMode: currentFacingMode,
+                        width: 640,
+                        height: 480
+                    });
 
-      await mpCamera.start();
-      poseReady = true;
-      statusDot.classList.add('active');
-      statusText.textContent = 'Tracking';
-    } catch (err) {
-      console.warn('Camera attempt failed:', err.message);
+                    await mpCamera.start();
+                    poseReady = true;
+                    statusDot.classList.add('active');
+                    statusText.textContent = 'Tracking';
+                } catch (err) {
+                    console.warn('Camera attempt failed:', err.message);
 
-      // Retry up to 2 times (hardware may need more time to release)
-      if (retryCount < 2) {
-        console.log(`Retrying camera... (attempt ${retryCount + 2})`);
-        await new Promise(r => setTimeout(r, 500));
-        loadingOverlay.classList.remove('active');
-        return startCamera(retryCount + 1);
-      }
+                    // Retry up to 2 times (hardware may need more time to release)
+                    if (retryCount < 2) {
+                        console.log(`Retrying camera... (attempt ${retryCount + 2})`);
+                        await new Promise(r => setTimeout(r, 500));
+                        loadingOverlay.classList.remove('active');
+                        return startCamera(retryCount + 1);
+                    }
 
-      statusDot.classList.remove('active');
-      statusText.textContent = 'Camera error';
-      showToast('Camera failed — try again', 'down');
-    }
+                    statusDot.classList.remove('active');
+                    statusText.textContent = 'Camera error';
+                    showToast('Camera failed — try again', 'down');
+                }
 
-    loadingOverlay.classList.remove('active');
-  }
+                loadingOverlay.classList.remove('active');
+            }
 
-  switchCameraBtn.addEventListener('click', async () => {
-    currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
-    await startCamera();
-  });
+            switchCameraBtn.addEventListener('click', async () => {
+                currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+                await startCamera();
+            });
 
-  startBtn.addEventListener('click', async () => {
-    startScreen.style.display = 'none';
-    mainApp.classList.remove('hidden');
+            musicBtn.addEventListener('click', () => {
+                if (bgMusic.paused) {
+                    bgMusic.play();
+                    musicBtn.classList.remove('muted');
+                    musicBtn.innerHTML = '<span id="music-icon">🎵</span> Music: ON';
+                } else {
+                    bgMusic.pause();
+                    musicBtn.classList.add('muted');
+                    musicBtn.innerHTML = '<span id="music-icon">🔇</span> Music: OFF';
+                }
+            });
 
-    updateVolumeUI();
+            startBtn.addEventListener('click', async () => {
+                startScreen.style.display = 'none';
+                mainApp.classList.remove('hidden');
 
-    await startCamera();
-  });
-})();
-</script>
+                updateVolumeUI();
+                
+                // Start music on first interaction
+                bgMusic.play().catch(e => console.log("Autoplay blocked, waiting for more interaction"));
+
+                await startCamera();
+            });
+        })();
+    </script>
 </body>
+
 </html>
