@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Volume by Exercise - April Fools!</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #0a0a1a;
+    color: #fff;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  #start-screen {
+    position: fixed; inset: 0; z-index: 1000;
+    background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3e 100%);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 24px;
+  }
+
+  #start-screen h1 {
+    font-size: clamp(28px, 6vw, 56px);
+    background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    text-align: center;
+  }
+
+  #start-screen p {
+    font-size: clamp(14px, 2.5vw, 18px);
+    color: #aaa; text-align: center; max-width: 500px; line-height: 1.6;
+    padding: 0 20px;
+  }
+
+  #start-btn {
+    padding: 16px 48px; font-size: 20px; font-weight: 700;
+    border: none; border-radius: 50px; cursor: pointer;
+    background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+    color: #fff; letter-spacing: 1px;
+    box-shadow: 0 8px 32px rgba(255, 107, 107, 0.4);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  #start-btn:hover { transform: scale(1.05); box-shadow: 0 12px 40px rgba(255, 107, 107, 0.6); }
+  #start-btn:active { transform: scale(0.97); }
+
+  .main-layout {
+    display: grid;
+    grid-template-columns: 80px 1fr 200px;
+    grid-template-rows: 1fr;
+    height: 100vh; width: 100vw;
+  }
+
+  @media (max-width: 768px) {
+    .main-layout {
+      grid-template-columns: 60px 1fr;
+      grid-template-rows: 1fr 140px;
+    }
+    .stick-figure-panel { display: none; }
+  }
+
+  .volume-bar-container {
+    background: rgba(255,255,255,0.05);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 16px 8px; position: relative;
+  }
+
+  .volume-track {
+    width: 32px; height: 70vh;
+    background: rgba(255,255,255,0.08);
+    border-radius: 16px; position: relative;
+    overflow: hidden;
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.3);
+  }
+
+  .volume-fill {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: linear-gradient(0deg, #00d2ff 0%, #3a7bd5 50%, #ff6b6b 100%);
+    border-radius: 16px;
+    transition: height 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  .volume-label {
+    margin-top: 12px; font-size: 22px; font-weight: 800;
+    color: #48dbfb;
+  }
+
+  .camera-area {
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+
+  #webcam {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1);
+  }
+
+  #pose-canvas {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+  }
+
+
+
+  .stick-figure-panel {
+    background: rgba(255,255,255,0.03);
+    border-left: 1px solid rgba(255,255,255,0.06);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 16px;
+  }
+
+  .stick-figure-panel h3 {
+    font-size: 13px; color: #888;
+    margin-bottom: 12px; text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+
+  #instruction-canvas {
+    width: 160px; height: 220px;
+  }
+
+  .rep-counter {
+    margin-top: 16px; text-align: center;
+  }
+  .rep-counter .number {
+    font-size: 36px; font-weight: 900;
+    background: linear-gradient(135deg, #feca57, #ff9ff3);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .rep-counter .label {
+    font-size: 11px; color: #666;
+    text-transform: uppercase; letter-spacing: 2px;
+  }
+
+  .toast-container {
+    position: fixed;
+    top: 20px; left: 50%;
+    transform: translateX(-50%);
+    z-index: 900;
+    display: flex; flex-direction: column;
+    align-items: center; gap: 8px;
+    pointer-events: none;
+  }
+
+  .toast {
+    padding: 10px 24px;
+    border-radius: 30px;
+    font-weight: 700; font-size: 16px;
+    animation: toastIn 0.3s ease, toastOut 0.3s ease 1.2s forwards;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  }
+  .toast.up { background: rgba(0, 210, 106, 0.9); color: #fff; }
+  .toast.down { background: rgba(255, 75, 75, 0.9); color: #fff; }
+
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateY(-20px) scale(0.8); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes toastOut {
+    from { opacity: 1; transform: translateY(0) scale(1); }
+    to { opacity: 0; transform: translateY(-20px) scale(0.8); }
+  }
+
+  #april-fools-overlay {
+    position: fixed; inset: 0; z-index: 2000;
+    background: radial-gradient(circle, #1a1a3e 0%, #0a0a1a 100%);
+    display: none; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 20px; text-align: center;
+    animation: overlayIn 0.5s ease;
+  }
+  #april-fools-overlay.active { display: flex; }
+
+  @keyframes overlayIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  #april-fools-overlay h1 {
+    font-size: clamp(36px, 8vw, 72px);
+    background: linear-gradient(90deg, #feca57, #ff6b6b, #ff9ff3, #48dbfb);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    animation: pulse 1.5s ease infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+
+  #april-fools-overlay .sub {
+    font-size: clamp(16px, 3vw, 24px);
+    color: #ccc; max-width: 600px;
+    line-height: 1.6; padding: 0 20px;
+  }
+
+  #april-fools-overlay .reps-done {
+    font-size: clamp(40px, 6vw, 64px);
+    font-weight: 900; color: #feca57;
+  }
+
+  #april-fools-overlay .dismiss-btn {
+    margin-top: 24px;
+    padding: 14px 40px; font-size: 16px;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-radius: 50px; background: transparent;
+    color: #fff; cursor: pointer;
+    transition: all 0.2s;
+  }
+  #april-fools-overlay .dismiss-btn:hover {
+    background: rgba(255,255,255,0.1);
+    border-color: rgba(255,255,255,0.4);
+  }
+
+  .status-indicator {
+    position: absolute; top: 12px; left: 12px;
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(0,0,0,0.6); padding: 8px 14px;
+    border-radius: 20px; font-size: 13px; z-index: 10;
+  }
+  .status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #ff4757;
+  }
+  .status-dot.active { background: #2ed573; animation: blink 1s infinite; }
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+  .loading-spinner {
+    width: 40px; height: 40px;
+    border: 3px solid rgba(255,255,255,0.1);
+    border-top-color: #48dbfb;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  #loading-overlay {
+    position: fixed; inset: 0; z-index: 1500;
+    background: rgba(10,10,26,0.95);
+    display: none; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 16px;
+  }
+  #loading-overlay.active { display: flex; }
+  #loading-overlay p { color: #888; font-size: 14px; }
+</style>
+</head>
+<body>
+
+<div id="start-screen">
+  <h1>Volume by Exercise</h1>
+  <p>Control the volume with your body! Do jumping jacks to turn it up. Lower your arms to turn it down. Ready to sweat?</p>
+  <button id="start-btn">LET'S GO</button>
+</div>
+
+<div id="loading-overlay">
+  <div class="loading-spinner"></div>
+  <p>Loading Pose Detection...</p>
+</div>
+
+<div class="main-layout" id="main-app" style="display:none;">
+  <div class="volume-bar-container">
+    <div class="volume-track">
+      <div class="volume-fill" id="volume-fill" style="height:50%"></div>
+    </div>
+    <div class="volume-label" id="volume-label">50%</div>
+  </div>
+
+  <div class="camera-area">
+    <video id="webcam" autoplay playsinline></video>
+    <canvas id="pose-canvas"></canvas>
+    <div class="status-indicator">
+      <div class="status-dot" id="status-dot"></div>
+      <span id="status-text">Waiting...</span>
+    </div>
+
+
+  </div>
+
+  <div class="stick-figure-panel">
+    <h3>Guide</h3>
+    <canvas id="instruction-canvas" width="160" height="220"></canvas>
+    <div class="rep-counter">
+      <div class="number" id="rep-count">0</div>
+      <div class="label">Reps</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<div id="april-fools-overlay">
+  <h1>APRIL FOOLS!</h1>
+  <div class="reps-done" id="reps-done">0</div>
+  <div class="sub">
+    I just made you do <strong id="reps-done-text">0</strong> jumping jacks just to change the volume.<br>
+    You're welcome for the cardio. Now be grateful and go get some water.
+  </div>
+  <button class="dismiss-btn" id="dismiss-btn">Fine, I'll hydrate.</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+
+<script>
+(function() {
+  let volume = 0.5;
+  let repCount = 0;
+  let currentArmState = 'NEUTRAL'; // State machine: NEUTRAL | UP | DOWN
+  let aprilFoolsTriggered = false;
+  let poseReady = false;
+
+  const startScreen = document.getElementById('start-screen');
+  const startBtn = document.getElementById('start-btn');
+  const loadingOverlay = document.getElementById('loading-overlay');
+  const mainApp = document.getElementById('main-app');
+  const webcam = document.getElementById('webcam');
+  const poseCanvas = document.getElementById('pose-canvas');
+  const poseCtx = poseCanvas.getContext('2d');
+  const volumeFill = document.getElementById('volume-fill');
+  const volumeLabel = document.getElementById('volume-label');
+  const statusDot = document.getElementById('status-dot');
+  const statusText = document.getElementById('status-text');
+  const repCountEl = document.getElementById('rep-count');
+  const toastContainer = document.getElementById('toast-container');
+  const aprilFoolsOverlay = document.getElementById('april-fools-overlay');
+  const repsDoneEl = document.getElementById('reps-done');
+  const repsDoneTextEl = document.getElementById('reps-done-text');
+  const dismissBtn = document.getElementById('dismiss-btn');
+  const instrCanvas = document.getElementById('instruction-canvas');
+  const instrCtx = instrCanvas.getContext('2d');
+
+  // armState: 'UP' | 'NEUTRAL' | 'DOWN'
+  function drawStickFigure(ctx, w, h, armState) {
+    ctx.clearRect(0, 0, w, h);
+    const cx = w / 2;
+    const headR = 14;
+    const headY = 30;
+    const neckY = headY + headR + 4;
+    const shoulderY = neckY + 12;
+    const hipY = shoulderY + 50;
+    const kneeY = hipY + 35;
+    const footY = kneeY + 35;
+
+    ctx.strokeStyle = '#48dbfb';
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+
+    // Head
+    ctx.beginPath();
+    ctx.arc(cx, headY, headR, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Spine
+    ctx.beginPath();
+    ctx.moveTo(cx, neckY);
+    ctx.lineTo(cx, hipY);
+    ctx.stroke();
+
+    // Shoulders
+    ctx.beginPath();
+    ctx.moveTo(cx - 20, shoulderY);
+    ctx.lineTo(cx + 20, shoulderY);
+    ctx.stroke();
+
+    // Arms based on state
+    if (armState === 'UP') {
+      ctx.beginPath();
+      ctx.moveTo(cx - 20, shoulderY);
+      ctx.lineTo(cx - 35, shoulderY - 40);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(cx + 20, shoulderY);
+      ctx.lineTo(cx + 35, shoulderY - 40);
+      ctx.stroke();
+    } else if (armState === 'DOWN') {
+      ctx.beginPath();
+      ctx.moveTo(cx - 20, shoulderY);
+      ctx.lineTo(cx - 32, shoulderY + 30);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(cx + 20, shoulderY);
+      ctx.lineTo(cx + 32, shoulderY + 30);
+      ctx.stroke();
+    } else {
+      // NEUTRAL — arms straight out (perpendicular / T-pose)
+      ctx.beginPath();
+      ctx.moveTo(cx - 20, shoulderY);
+      ctx.lineTo(cx - 50, shoulderY);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(cx + 20, shoulderY);
+      ctx.lineTo(cx + 50, shoulderY);
+      ctx.stroke();
+    }
+
+    // Legs
+    ctx.beginPath();
+    ctx.moveTo(cx - 8, hipY);
+    ctx.lineTo(cx - 16, kneeY);
+    ctx.lineTo(cx - 16, footY);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx + 8, hipY);
+    ctx.lineTo(cx + 16, kneeY);
+    ctx.lineTo(cx + 16, footY);
+    ctx.stroke();
+
+    // Label
+    const labelColors = { UP: '#2ed573', NEUTRAL: '#feca57', DOWN: '#ff6b6b' };
+    const labelTexts = { UP: 'VOLUME UP', NEUTRAL: 'SAFE SPOT', DOWN: 'VOLUME DOWN' };
+    ctx.fillStyle = labelColors[armState] || '#feca57';
+    ctx.font = '11px system-ui';
+    ctx.textAlign = 'center';
+    ctx.fillText(labelTexts[armState] || 'SAFE SPOT', cx, h - 4);
+  }
+
+  let instrAnimFrame = 0;
+  function animateInstruction() {
+    instrAnimFrame++;
+    // Cycle through UP -> NEUTRAL -> DOWN -> NEUTRAL
+    const phase = Math.sin(instrAnimFrame * 0.025);
+    let demoState = 'NEUTRAL';
+    if (phase > 0.4) demoState = 'UP';
+    else if (phase < -0.4) demoState = 'DOWN';
+    drawStickFigure(instrCtx, 160, 220, demoState);
+    requestAnimationFrame(animateInstruction);
+  }
+  animateInstruction();
+
+  function showToast(text, type) {
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = text;
+    toastContainer.appendChild(toast);
+    setTimeout(() => toast.remove(), 1500);
+  }
+
+  function updateVolumeUI() {
+    const pct = Math.round(volume * 100);
+    volumeFill.style.height = pct + '%';
+    volumeLabel.textContent = pct + '%';
+
+    if (volume >= 0.8) {
+      volumeFill.style.background = 'linear-gradient(0deg, #ff6b6b, #ff4757)';
+    } else if (volume >= 0.5) {
+      volumeFill.style.background = 'linear-gradient(0deg, #feca57, #ff9ff3)';
+    } else {
+      volumeFill.style.background = 'linear-gradient(0deg, #48dbfb, #3a7bd5)';
+    }
+
+  }
+
+  function adjustVolume(direction) {
+    if (aprilFoolsTriggered) return;
+
+    if (direction === 'UP' && volume < 1.0) {
+      volume = Math.min(1, volume + 0.05);
+      showToast('+5%', 'up');
+    } else if (direction === 'DOWN' && volume > 0.0) {
+      volume = Math.max(0, volume - 0.05);
+      showToast('-5%', 'down');
+    }
+
+    updateVolumeUI();
+    checkAprilFools();
+  }
+
+  function checkAprilFools() {
+    if (aprilFoolsTriggered) return;
+
+    if (volume <= 0 || volume >= 1) {
+      aprilFoolsTriggered = true;
+      repsDoneEl.textContent = repCount;
+      repsDoneTextEl.textContent = repCount;
+      aprilFoolsOverlay.classList.add('active');
+    }
+  }
+
+  dismissBtn.addEventListener('click', () => {
+    aprilFoolsOverlay.classList.remove('active');
+    volume = 0.5;
+    updateVolumeUI();
+    aprilFoolsTriggered = false;
+  });
+
+
+
+  function onPoseResults(results) {
+    poseCanvas.width = poseCanvas.offsetWidth;
+    poseCanvas.height = poseCanvas.offsetHeight;
+    poseCtx.save();
+    poseCtx.clearRect(0, 0, poseCanvas.width, poseCanvas.height);
+
+    if (results.poseLandmarks) {
+      statusDot.classList.add('active');
+      statusText.textContent = 'Tracking';
+
+      drawConnectors(poseCtx, results.poseLandmarks, POSE_CONNECTIONS, {
+        color: 'rgba(72, 219, 251, 0.5)', lineWidth: 3
+      });
+      drawLandmarks(poseCtx, results.poseLandmarks, {
+        color: 'rgba(255, 159, 243, 0.7)', lineWidth: 1, radius: 4
+      });
+
+      const landmarks = results.poseLandmarks;
+      const leftWristY = landmarks[15].y;
+      const rightWristY = landmarks[16].y;
+      const leftShoulderY = landmarks[11].y;
+      const rightShoulderY = landmarks[12].y;
+
+      // Average wrist and shoulder heights
+      const avgWristY = (leftWristY + rightWristY) / 2;
+      const avgShoulderY = (leftShoulderY + rightShoulderY) / 2;
+
+      // Safe spot buffer — wrists within this range of shoulders = NEUTRAL
+      // In MediaPipe, Y increases downward, so:
+      //   wrists ABOVE shoulders => avgWristY < avgShoulderY
+      //   wrists BELOW shoulders => avgWristY > avgShoulderY
+      const threshold = 0.10;
+
+      let detectedZone;
+      if (avgWristY < avgShoulderY - threshold) {
+        detectedZone = 'UP';   // Wrists significantly above shoulders
+      } else if (avgWristY > avgShoulderY + threshold) {
+        detectedZone = 'DOWN'; // Wrists significantly below shoulders
+      } else {
+        detectedZone = 'NEUTRAL'; // Safe spot — arms roughly perpendicular
+      }
+
+      // STATE MACHINE: Only trigger volume change when transitioning FROM neutral
+      if (detectedZone === 'UP' && currentArmState === 'NEUTRAL') {
+        repCount++;
+        repCountEl.textContent = repCount;
+        adjustVolume('UP');
+      } else if (detectedZone === 'DOWN' && currentArmState === 'NEUTRAL') {
+        adjustVolume('DOWN');
+      }
+      // Update state (going UP→DOWN directly won't trigger anything)
+      currentArmState = detectedZone;
+
+      drawStickFigure(instrCtx, 160, 220, currentArmState);
+    } else {
+      statusDot.classList.remove('active');
+      statusText.textContent = 'No pose detected';
+    }
+
+    poseCtx.restore();
+  }
+
+  async function initPose() {
+    loadingOverlay.classList.add('active');
+
+    const pose = new Pose({
+      locateFile: (file) => {
+        return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
+      }
+    });
+
+    pose.setOptions({
+      modelComplexity: 1,
+      smoothLandmarks: true,
+      enableSegmentation: false,
+      minDetectionConfidence: 0.5,
+      minTrackingConfidence: 0.5
+    });
+
+    pose.onResults(onPoseResults);
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }
+      });
+      webcam.srcObject = stream;
+
+      await new Promise((resolve) => {
+        webcam.onloadedmetadata = () => {
+          webcam.play();
+          resolve();
+        };
+      });
+
+      const camera = new Camera(webcam, {
+        onFrame: async () => {
+          await pose.send({ image: webcam });
+        },
+        width: 640,
+        height: 480
+      });
+
+      await camera.start();
+      poseReady = true;
+    } catch (err) {
+      console.error('Camera error:', err);
+      statusDot.classList.remove('active');
+      statusText.textContent = 'Camera error';
+      alert('Could not access camera. Please allow camera permissions and reload.');
+    }
+
+    loadingOverlay.classList.remove('active');
+  }
+
+  startBtn.addEventListener('click', async () => {
+    startScreen.style.display = 'none';
+    mainApp.style.display = 'grid';
+
+    updateVolumeUI();
+
+    await initPose();
+  });
+})();
+</script>
+</body>
+</html>
