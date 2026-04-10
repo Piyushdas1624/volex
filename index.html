@@ -2,11 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <link rel="icon" href="favicon.png" type="image/png">
 <title>BurpeeButtons (Volume by Exercise)</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  .hidden { display: none !important; }
 
   body {
     font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
@@ -56,40 +57,6 @@
     height: 100vh; width: 100vw;
   }
 
-  @media (max-width: 768px) {
-    body { height: 100dvh; }
-    .main-layout {
-      grid-template-columns: 40px 1fr;
-      grid-template-rows: 1fr 90px;
-      height: 100dvh;
-    }
-    #webcam { object-fit: contain; background: #000; }
-    .camera-area {
-      max-height: calc(100dvh - 90px);
-      overflow: hidden;
-      background: #000;
-    }
-    .volume-bar-container { padding: 8px 4px; }
-    .volume-track { width: 14px; height: 40vh; margin: 0 auto; }
-    .volume-label { font-size: 12px; }
-    .stick-figure-panel {
-      display: flex !important;
-      grid-column: 1 / -1;
-      flex-direction: row;
-      align-items: center;
-      justify-content: center;
-      padding: 6px 12px;
-      border-left: none;
-      border-top: 1px solid rgba(255,255,255,0.08);
-      height: 90px;
-      overflow: hidden;
-    }
-    .stick-figure-panel h3 { margin-bottom: 0; margin-right: 8px; font-size: 10px; }
-    #instruction-canvas { width: 70px; height: 70px; }
-    .rep-counter { margin-top: 0; margin-left: 12px; }
-    .rep-counter .number { font-size: 22px; }
-    .rep-counter .label { font-size: 9px; }
-  }
 
   .volume-bar-container {
     background: rgba(255,255,255,0.05);
@@ -293,6 +260,96 @@
   @media (min-width: 769px) {
     .switch-camera-btn { display: none; }
   }
+
+  @media (max-width: 768px) {
+    /* === MOBILE: Full-screen camera with overlays === */
+    body { height: 100dvh; overflow: hidden; }
+
+    .main-layout {
+      display: block;
+      width: 100vw;
+      height: 100dvh;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Volume sidebar — hidden, replaced by floating badge */
+    .volume-bar-container { display: none !important; }
+
+    /* Camera fills the entire screen */
+    .camera-area {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+    #webcam {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      background: #000;
+    }
+    #pose-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Mobile-only floating volume badge */
+    #mobile-volume-badge {
+      display: block !important;
+      position: fixed;
+      top: 12px; right: 12px;
+      z-index: 500;
+      font-size: 18px;
+      font-weight: 800;
+      background: rgba(0,0,0,0.65);
+      backdrop-filter: blur(10px);
+      padding: 6px 16px;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #48dbfb;
+    }
+
+    /* Status indicator — keep top-left */
+    .status-indicator { z-index: 100; }
+
+    /* Guide panel — fixed bottom bar */
+    .stick-figure-panel {
+      display: flex !important;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      z-index: 100;
+      flex-direction: row !important;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      padding: 8px 16px !important;
+      padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px)) !important;
+      background: rgba(10, 10, 26, 0.85) !important;
+      backdrop-filter: blur(12px);
+      border-left: none !important;
+      border-top: 1px solid rgba(255,255,255,0.1);
+    }
+    .stick-figure-panel h3 { display: none; }
+    #instruction-canvas { width: 50px !important; height: 65px !important; flex-shrink: 0; }
+    .rep-counter { margin: 0 !important; text-align: center; }
+    .rep-counter .number { font-size: 24px !important; }
+    .rep-counter .label { font-size: 9px !important; letter-spacing: 1px; }
+
+    /* Flip camera — fixed above the bottom bar on mobile */
+    .switch-camera-btn {
+      position: fixed !important;
+      bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+      left: 12px;
+      right: auto;
+      z-index: 200;
+      padding: 8px 14px;
+      font-size: 12px;
+    }
+  }
 </style>
 </head>
 <body>
@@ -308,7 +365,7 @@
   <p>Loading Pose Detection...</p>
 </div>
 
-<div class="main-layout" id="main-app" style="display:none;">
+<div class="main-layout hidden" id="main-app">
   <div class="volume-bar-container">
     <div class="volume-track">
       <div class="volume-fill" id="volume-fill" style="height:50%"></div>
@@ -325,6 +382,8 @@
     </div>
     <button class="switch-camera-btn" id="switch-camera-btn">Flip Camera</button>
   </div>
+
+  <div id="mobile-volume-badge" style="display:none;">50%</div>
 
   <div class="stick-figure-panel">
     <h3>Guide</h3>
@@ -378,6 +437,7 @@
   const repsDoneTextEl = document.getElementById('reps-done-text');
   const dismissBtn = document.getElementById('dismiss-btn');
   const switchCameraBtn = document.getElementById('switch-camera-btn');
+  const mobileVolumeBadge = document.getElementById('mobile-volume-badge');
   const instrCanvas = document.getElementById('instruction-canvas');
   const instrCtx = instrCanvas.getContext('2d');
 
@@ -491,6 +551,7 @@
     const pct = Math.round(volume * 100);
     volumeFill.style.height = pct + '%';
     volumeLabel.textContent = pct + '%';
+    if (mobileVolumeBadge) mobileVolumeBadge.textContent = pct + '%';
 
     if (volume >= 0.8) {
       volumeFill.style.background = 'linear-gradient(0deg, #ff6b6b, #ff4757)';
@@ -682,7 +743,7 @@
 
   startBtn.addEventListener('click', async () => {
     startScreen.style.display = 'none';
-    mainApp.style.display = 'grid';
+    mainApp.classList.remove('hidden');
 
     updateVolumeUI();
 
