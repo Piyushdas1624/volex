@@ -59,22 +59,28 @@
   @media (max-width: 768px) {
     .main-layout {
       grid-template-columns: 50px 1fr;
-      grid-template-rows: 1fr auto;
+      grid-template-rows: 1fr 100px;
+      height: 100vh;
     }
-    .volume-track { width: 16px; margin: 0 auto; }
+    .camera-area { max-height: calc(100vh - 100px); }
+    .volume-track { width: 16px; height: 50vh; margin: 0 auto; }
     .volume-label { font-size: 14px; }
-    .stick-figure-panel { 
+    .stick-figure-panel {
       display: flex;
-      grid-column: 1 / -1; 
-      flex-direction: row; 
-      padding: 10px;
+      grid-column: 1 / -1;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 12px;
       border-left: none;
       border-top: 1px solid rgba(255,255,255,0.06);
+      min-height: 100px;
     }
-    .stick-figure-panel h3 { margin-bottom: 0; margin-right: 12px; }
-    #instruction-canvas { height: 120px; width: auto; object-fit: contain; }
-    .rep-counter { margin-top: 0; margin-left: 20px; }
-    .rep-counter .number { font-size: 28px; }
+    .stick-figure-panel h3 { margin-bottom: 0; margin-right: 10px; font-size: 11px; }
+    #instruction-canvas { width: 80px; height: 80px; }
+    .rep-counter { margin-top: 0; margin-left: 16px; }
+    .rep-counter .number { font-size: 24px; }
+    .rep-counter .label { font-size: 9px; }
   }
 
   .volume-bar-container {
@@ -588,16 +594,27 @@
   let currentFacingMode = 'user';
   let mpCamera = null;
   let poseInstance = null;
+  let isSwitching = false;
 
-  async function startCamera() {
-    loadingOverlay.classList.add('active');
-
+  async function stopCurrentCamera() {
+    // Stop MediaPipe Camera first
     if (mpCamera) {
-      await mpCamera.stop();
+      try { await mpCamera.stop(); } catch(e) { /* ignore */ }
+      mpCamera = null;
     }
+    // Then release all browser media tracks
     if (webcam.srcObject) {
       webcam.srcObject.getTracks().forEach(track => track.stop());
+      webcam.srcObject = null;
     }
+    // Give the hardware time to fully release
+    await new Promise(r => setTimeout(r, 400));
+  }
+
+  async function startCamera(retryCount = 0) {
+    loadingOverlay.classList.add('active');
+
+    await stopCurrentCamera();
 
     if (!poseInstance) {
       poseInstance = new Pose({
@@ -617,18 +634,7 @@
     try {
       webcam.style.transform = currentFacingMode === 'user' ? 'scaleX(-1)' : 'scaleX(1)';
 
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: currentFacingMode, width: { ideal: 640 }, height: { ideal: 480 } }
-      });
-      webcam.srcObject = stream;
-
-      await new Promise((resolve) => {
-        webcam.onloadedmetadata = () => {
-          webcam.play();
-          resolve();
-        };
-      });
-
+      // Let MediaPipe's Camera helper handle getUserMedia
       mpCamera = new Camera(webcam, {
         onFrame: async () => {
           await poseInstance.send({ image: webcam });
@@ -640,11 +646,22 @@
 
       await mpCamera.start();
       poseReady = true;
+      statusDot.classList.add('active');
+      statusText.textContent = 'Tracking';
     } catch (err) {
-      console.error('Camera error:', err);
+      console.warn('Camera attempt failed:', err.message);
+
+      // Retry up to 2 times (hardware may need more time to release)
+      if (retryCount < 2) {
+        console.log(`Retrying camera... (attempt ${retryCount + 2})`);
+        await new Promise(r => setTimeout(r, 500));
+        loadingOverlay.classList.remove('active');
+        return startCamera(retryCount + 1);
+      }
+
       statusDot.classList.remove('active');
       statusText.textContent = 'Camera error';
-      alert('Could not access camera. Please allow camera permissions and reload.');
+      showToast('Camera failed — try again', 'down');
     }
 
     loadingOverlay.classList.remove('active');
