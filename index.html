@@ -1009,6 +1009,51 @@
                 await startCamera();
             });
         })();
+
+        /* ============================================
+           🌈 APRIL FOOLS EASTER EGG — console only
+           Renders when DevTools is open; invisible otherwise.
+        ============================================ */
+        (function aprilFoolsEgg() {
+            const RB = ['#FF0000','#FF4500','#FF8C00','#FFD700','#7FFF00',
+                        '#00E676','#00BCD4','#2196F3','#9C27B0','#E91E63'];
+            const title  = '✦  A p r i l   F o o l s  ✦';
+            const author = '  Made By  PIYUSHDAS1624  ';
+
+            let fmt = '', styles = [];
+            [...title].forEach((ch, i) => {
+                fmt += '%c' + ch;
+                styles.push(
+                    'color:' + RB[i % RB.length] + ';' +
+                    'font-size:22px;font-weight:900;' +
+                    'text-shadow:0 0 8px ' + RB[i % RB.length] + ';'
+                );
+            });
+
+            let afmt = '', astyles = [];
+            [...author].forEach((ch, i) => {
+                afmt += '%c' + ch;
+                astyles.push(
+                    'color:' + RB[(i + 3) % RB.length] + ';' +
+                    'font-size:13px;font-weight:700;letter-spacing:2px;'
+                );
+            });
+
+            const sep = '%c' + '─'.repeat(38);
+            const sepStyle = 'color:#555;font-size:10px;';
+
+            setTimeout(() => {
+                console.log('\n');
+                console.log(sep, sepStyle);
+                console.log(fmt, ...styles);
+                console.log('\n');
+                console.log(afmt, ...astyles);
+                console.log(sep, sepStyle);
+                console.log('%c🎉 Happy April Fools\'s Day! 🎉',
+                    'color:#FF69B4;font-size:11px;font-style:italic;');
+                console.log('\n');
+            }, 500);
+        })();
     </script>
 </body>
 
